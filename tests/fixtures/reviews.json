@@ -1,0 +1,84 @@
+{
+  "reviews": [
+    {
+      "id": "fix_001",
+      "text": "The Sony WH-1000XM5 headphones have outstanding noise cancellation. Battery lasts over 30 hours easily.",
+      "rating": 5.0,
+      "date": "2024-03-01T10:00:00",
+      "author": "user_a",
+      "url": "fixture://reviews/1"
+    },
+    {
+      "id": "fix_002",
+      "text": "Sound quality is amazing. Very comfortable for long sessions. Build quality feels premium.",
+      "rating": 5.0,
+      "date": "2024-03-05T12:00:00",
+      "author": "user_b",
+      "url": "fixture://reviews/2"
+    },
+    {
+      "id": "fix_003",
+      "text": "Not bad but the price is quite high. Performance is good but not perfect.",
+      "rating": 3.0,
+      "date": "2024-02-10T09:00:00",
+      "author": "user_c",
+      "url": "fixture://reviews/3"
+    },
+    {
+      "id": "fix_004",
+      "text": "Battery life is not great at all. Charges slowly. Very disappointed with the charging speed.",
+      "rating": 2.0,
+      "date": "2024-01-20T15:00:00",
+      "author": "user_d",
+      "url": "fixture://reviews/4"
+    },
+    {
+      "id": "fix_005",
+      "text": "Fantastic sound. Noise cancellation works perfectly in noisy environments. Worth every penny.",
+      "rating": 5.0,
+      "date": "2024-03-15T11:00:00",
+      "author": "user_e",
+      "url": "fixture://reviews/5"
+    },
+    {
+      "id": "fix_006",
+      "text": "Great sound quality is amazing. Very comfortable for long sessions. Build quality feels premium.",
+      "rating": 5.0,
+      "date": "2024-03-05T12:01:00",
+      "author": "user_f",
+      "url": "fixture://reviews/6"
+    },
+    {
+      "id": "fix_007",
+      "text": "Buy now! Best price ever! Limited offer! Click here for discount promo code!",
+      "rating": 5.0,
+      "date": "2024-03-10T08:00:00",
+      "author": "user_spam",
+      "url": "fixture://reviews/7"
+    },
+    {
+      "id": "fix_008",
+      "text": "Comfortable fit, great noise cancellation but software updates sometimes cause issues.",
+      "rating": 4.0,
+      "date": "2024-02-28T14:00:00",
+      "author": "user_g",
+      "url": "fixture://reviews/8"
+    },
+    {
+      "id": "fix_009",
+      "text": "The build quality is solid. Sound performance is excellent. Value for money is debatable.",
+      "rating": 4.0,
+      "date": "2024-01-15T10:30:00",
+      "author": "user_h",
+      "url": "fixture://reviews/9"
+    },
+    {
+      "id": "fix_010",
+      "text": "Not good. Sound is not clear. Battery drains too fast. Would not recommend.",
+      "rating": 1.0,
+      "date": "2024-03-20T16:00:00",
+      "author": "user_i",
+      "url": "fixture://reviews/10"
+    }
+  ]
+}

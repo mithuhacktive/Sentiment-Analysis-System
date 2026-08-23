@@ -1,0 +1,11 @@
+[
+  {"text": "Excellent product, highly recommend!", "label": "POSITIVE"},
+  {"text": "Battery life is amazing, lasts all day.", "label": "POSITIVE"},
+  {"text": "Great sound quality and comfortable fit.", "label": "POSITIVE"},
+  {"text": "Terrible quality, broke after one week.", "label": "NEGATIVE"},
+  {"text": "Not good at all. Would not recommend.", "label": "NEGATIVE"},
+  {"text": "Battery drains too fast. Very disappointing.", "label": "NEGATIVE"},
+  {"text": "It is okay, nothing special.", "label": "NEUTRAL"},
+  {"text": "Average performance for the price.", "label": "NEUTRAL"},
+  {"text": "Works as expected, no complaints.", "label": "NEUTRAL"}
+]

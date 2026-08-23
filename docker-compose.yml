@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  sentiguard:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - SENTIGUARD_ENV=development
+      - SENTIGUARD_OFFLINE=true
+      - DATABASE_URL=sqlite+aiosqlite:////app/data/sentiguard.db
+      - SENTIMENT_MODEL=cardiffnlp/twitter-roberta-base-sentiment-latest
+      - MODEL_DEVICE=cpu
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
