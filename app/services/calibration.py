@@ -1,5 +1,4 @@
 from __future__ import annotations
-import math
 import logging
 from app.config import get_settings
 
@@ -9,24 +8,22 @@ logger = logging.getLogger(__name__)
 
 def calibrate_confidence(raw_probability: float, label: str, n_reviews: int) -> float:
     """
-    Simple post-hoc calibration:
-    1. Apply slight regression-to-mean for small sample sizes.
-    2. Penalise very small review counts.
-    Proper Platt scaling / temperature scaling requires a held-out cal set.
+    Post-hoc calibration with sample-size penalty.
+    Penalty is mild — we have real evidence, just flag uncertainty.
+    Floor 0.05, ceiling 0.98.
     """
-    # Small-sample penalty
-    if n_reviews < 5:
-        factor = 0.7
+    if n_reviews < 3:
+        factor = 0.65
+    elif n_reviews < 5:
+        factor = 0.75
     elif n_reviews < 15:
-        factor = 0.85
+        factor = 0.88
     elif n_reviews < 30:
-        factor = 0.93
+        factor = 0.95
     else:
         factor = 1.0
 
     calibrated = raw_probability * factor
-
-    # Soft floor / ceiling
     calibrated = max(0.05, min(0.98, calibrated))
     return round(calibrated, 4)
 

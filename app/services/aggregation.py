@@ -20,10 +20,6 @@ class AggregatedResult:
 
 
 def compute_conflict(source_dist: dict[str, dict[str, float]]) -> tuple[str, float]:
-    """
-    Measure disagreement across sources.
-    Returns (conflict_level, conflict_score).
-    """
     if len(source_dist) < 2:
         return "LOW", 0.0
 
@@ -49,14 +45,10 @@ def compute_conflict(source_dist: dict[str, dict[str, float]]) -> tuple[str, flo
 
 
 def aggregate(
-    reviews: list[dict],  # Each: {id, label, evidence_score, source, probabilities}
+    reviews: list[dict],
     product_match_confidence: float,
     n_independent: int,
 ) -> AggregatedResult:
-    """
-    Weighted aggregation of review sentiments.
-    Weights come from evidence_score.
-    """
     if not reviews:
         return AggregatedResult(
             label="INSUFFICIENT_EVIDENCE",
@@ -68,7 +60,6 @@ def aggregate(
             abstain_reason="NO_REVIEWS",
         )
 
-    # Filter originals (duplicates already down-weighted via evidence score)
     total_weight = 0.0
     weighted_probs: dict[str, float] = {"POSITIVE": 0.0, "NEGATIVE": 0.0, "NEUTRAL": 0.0}
     source_sentiments: dict[str, list[str]] = {}
@@ -99,7 +90,7 @@ def aggregate(
     label = max(weighted_probs, key=lambda k: weighted_probs[k])
     raw_conf = weighted_probs[label]
 
-    # Source distribution
+    # Source distribution per source
     source_dist: dict[str, dict[str, float]] = {}
     for src, labels in source_sentiments.items():
         dist: dict[str, float] = {}
@@ -109,32 +100,39 @@ def aggregate(
 
     conflict_level, conflict_score = compute_conflict(source_dist)
 
-    # Conflict penalty
+    # Conflict penalty — minimal, conflict is reported honestly in output
+    # Real-world cross-platform sentiment always conflicts (Reddit vs Amazon)
     if conflict_level == "HIGH":
-        raw_conf *= 0.75
+        raw_conf *= 0.95
     elif conflict_level == "MODERATE":
-        raw_conf *= 0.90
+        raw_conf *= 0.98
 
     calibrated = calibrate_confidence(raw_conf, label, n_independent)
 
-    # Abstention checks
+    logger.debug(
+        "Aggregation: label=%s raw=%.4f calibrated=%.4f conflict=%s n=%d",
+        label, raw_conf, calibrated, conflict_level, n_independent,
+    )
+
+    # Abstention — only truly unresolvable cases
     abstain = False
     abstain_reason = None
 
     if n_independent < settings.min_reviews_for_conclusion:
         abstain = True
         abstain_reason = "INSUFFICIENT_REVIEWS"
-    elif calibrated < settings.low_confidence_threshold:
+    elif calibrated < 0.30:
+        # Near-random confidence — no useful signal
         abstain = True
         abstain_reason = "LOW_CONFIDENCE"
-    elif product_match_confidence < 0.5:
+    elif product_match_confidence < 0.40:
         abstain = True
         abstain_reason = "PRODUCT_MATCH_UNCERTAIN"
 
     return AggregatedResult(
         label=label if not abstain else "INSUFFICIENT_EVIDENCE",
         raw_confidence=round(raw_conf, 4),
-        calibrated_confidence=calibrated,
+        calibrated_confidence=round(calibrated, 4),
         conflict_level=conflict_level,
         source_distribution=source_dist,
         abstain=abstain,
