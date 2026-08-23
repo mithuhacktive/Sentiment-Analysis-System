@@ -14,3 +14,7 @@ build/
 htmlcov/
 sentiguard.db
 data/*.db
+sentiguard.egg-info/
+*.egg-info/
+.coverage
+.pytest_cache/
