@@ -17,4 +17,6 @@ data/*.db
 sentiguard.egg-info/
 *.egg-info/
 .coverage
-.pytest_cache/
+frontend/dist/
+
+frontend/node_modules/

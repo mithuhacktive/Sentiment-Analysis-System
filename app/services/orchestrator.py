@@ -33,16 +33,10 @@ class Orchestrator:
         self._aspect = AspectAnalyser()
         self._dedup = DuplicateDetector()
         self._quality = ReviewQualityScorer()
-        self._adapters = [
-            FixtureAdapter() if settings.sentiguard_offline else None,
-            URLAdapter(),
-            SerpApiAdapter(),
-            RedditAdapter(),
-        ]
-        self._adapters = [a for a in self._adapters if a is not None]
-
-        if settings.sentiguard_offline:
-            self._adapters = [FixtureAdapter()]
+        self._fixture_adapter = FixtureAdapter()
+        self._url_adapter = URLAdapter()
+        self._serpapi_adapter = SerpApiAdapter()
+        self._reddit_adapter = RedditAdapter()
 
     async def analyse(self, query: str, fresh: bool = False, region: str | None = None) -> dict:
         analysis_id = str(uuid.uuid4())
@@ -78,28 +72,82 @@ class Orchestrator:
                     t_total=0,
                 )
 
-            # 3. Retrieve from all adapters concurrently
+            # 3. Determine and execute active adapters
             with timer("retrieval") as t_retrieval:
-                adapter_tasks = [
-                    a.fetch(clean_query, product_url)
-                    for a in self._adapters
-                    if a.is_available()
-                ]
-                adapter_results = await asyncio.gather(*adapter_tasks, return_exceptions=True)
+                all_raw_reviews: list[RawReview] = []
+                sources_attempted = 0
+                sources_successful = 0
 
-            sources_attempted = len(adapter_tasks)
-            sources_successful = 0
-            all_raw_reviews: list[RawReview] = []
-
-            for result in adapter_results:
-                if isinstance(result, Exception):
-                    logger.warning("Adapter raised exception: %s", result)
-                    continue
-                if result.success:
-                    sources_successful += 1
-                    all_raw_reviews.extend(result.reviews)
+                if settings.sentiguard_offline:
+                    # Explicit offline mode: use fixture adapter directly
+                    logger.info("[Retrieval] Running in OFFLINE mode — using FixtureAdapter")
+                    sources_attempted += 1
+                    res = await self._fixture_adapter.fetch(clean_query, product_url)
+                    if res.success and res.reviews:
+                        sources_successful += 1
+                        all_raw_reviews.extend(res.reviews)
+                        logger.info("[Retrieval] FixtureAdapter retrieved %d reviews", len(res.reviews))
+                    else:
+                        limitations.append(f"FixtureAdapter error: {res.error}")
                 else:
-                    limitations.append(f"Source '{result.source}' failed: {result.error}")
+                    # Online mode: select eligible adapters based on query type
+                    active_adapters = []
+                    if product_url:
+                        active_adapters.append(self._url_adapter)
+                    if self._serpapi_adapter.is_available():
+                        active_adapters.append(self._serpapi_adapter)
+                    if self._reddit_adapter.is_available():
+                        active_adapters.append(self._reddit_adapter)
+
+                    if active_adapters:
+                        sources_attempted = len(active_adapters)
+                        logger.info(
+                            "[Retrieval] Executing %d active external adapters: %s",
+                            len(active_adapters),
+                            [a.name for a in active_adapters],
+                        )
+                        adapter_tasks = [
+                            a.fetch(clean_query, product_url)
+                            for a in active_adapters
+                        ]
+                        adapter_results = await asyncio.gather(*adapter_tasks, return_exceptions=True)
+
+                        for result in adapter_results:
+                            if isinstance(result, Exception):
+                                logger.warning("[Retrieval] Adapter raised exception: %s", result)
+                                continue
+                            if result.success and result.reviews:
+                                sources_successful += 1
+                                all_raw_reviews.extend(result.reviews)
+                                logger.info(
+                                    "[Retrieval] Source '%s' successfully retrieved %d reviews",
+                                    result.source,
+                                    len(result.reviews),
+                                )
+                            else:
+                                err_msg = result.error or "no reviews returned"
+                                logger.warning("[Retrieval] Source '%s' did not provide reviews: %s", result.source, err_msg)
+                                limitations.append(f"Source '{result.source}' failed: {err_msg}")
+
+                    # Fallback to local fixture reviews if external sources returned 0 reviews
+                    if not all_raw_reviews and self._fixture_adapter.is_available():
+                        logger.info("[Retrieval] Live sources yielded 0 reviews. Activating FixtureAdapter fallback...")
+                        sources_attempted += 1
+                        fixture_res = await self._fixture_adapter.fetch(clean_query, product_url)
+                        if fixture_res.success and fixture_res.reviews:
+                            sources_successful += 1
+                            all_raw_reviews.extend(fixture_res.reviews)
+                            logger.info(
+                                "[Retrieval] Fallback FixtureAdapter loaded %d verified reviews for %r",
+                                len(fixture_res.reviews),
+                                clean_query,
+                            )
+                            limitations.append("Live external sources unavailable; loaded verified reference fixture reviews.")
+                        else:
+                            if fixture_res.error and fixture_res.error.startswith("NO_FIXTURE_REVIEWS_FOR_PRODUCT"):
+                                limitations.append("No local fixture reviews exist for this product and live external sources were unavailable.")
+                            else:
+                                limitations.append(f"Fallback FixtureAdapter error: {fixture_res.error}")
 
             # Cap total reviews
             all_raw_reviews = all_raw_reviews[:settings.max_total_reviews]
