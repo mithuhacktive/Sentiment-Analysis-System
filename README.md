@@ -6,70 +6,47 @@ Real-time evidence-grounded product sentiment intelligence backend.
 
 
 
-\## Quick Start
+## Quick Start
 
+1. Clone the repository:
+   `git clone https://github.com/mithuhacktive/Sentiment-Analysis-System.git`
 
+2. Enter the project:
+   `cd Sentiment-Analysis-System`
 
-```bash
+3. Create virtual environment:
+   `python -m venv .venv`
 
-\# 1. Install
+4. Activate virtual environment:
+   `.\.venv\Scripts\Activate.ps1`
 
-pip install -e ".\[dev]"
+5. Install backend dependencies:
+   `pip install -e ".[dev]"`
 
+6. Start backend:
+   `$env:SENTIGUARD_OFFLINE="false"`
+   `uvicorn app.main:app --reload`
 
+7. Open a new terminal and enter frontend:
+   `cd frontend`
 
-\# 2. Configure
+8. Install frontend dependencies:
+   `npm install`
 
-cp .env.example .env
+9. Start frontend:
+   `npm run dev`
 
+10. Open the application:
+    `http://localhost:5173`
 
+Backend:
+`http://127.0.0.1:8000`
 
-\# 3. Run (offline mode — no APIs needed)
+Health check:
+`http://localhost:8000/api/v1/health`
 
-SENTIGUARD\_OFFLINE=true uvicorn app.main:app --reload
-
-
-
-\# 4. Test
-
-curl http://localhost:8000/api/v1/health
-
-
-
-curl -X POST http://localhost:8000/api/v1/analyze \\
-
-&#x20; -H "Content-Type: application/json" \\
-
-&#x20; -d '{"query": "Sony WH-1000XM5"}'
-
-```
-
-
-
-\## Docker
-
-
-
-```bash
-
-docker compose up --build
-
-```
-
-
-
-\## Tests
-
-
-
-```bash
-
-pytest
-
-pytest --cov=app
-
-```
-
+Run tests:
+`pytest`
 
 
 \## Scripts
